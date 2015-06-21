@@ -8,6 +8,7 @@ package package_1337;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import static java.lang.System.currentTimeMillis;
 import javax.jws.WebService;
 import javax.jws.WebMethod;
 import javax.jws.WebParam;
@@ -40,7 +41,7 @@ public class GetDataService {
             byte[] bytes = decoder.decode(txt);
         
             FileOutputStream fos ;
-            fos = new FileOutputStream("d:\\dane\\chmura\\dropbox\\programowanie\\projekty\\NetBeans\\TimWebAppAndroid\\plik.jpg");
+            fos = new FileOutputStream("d:\\dane\\chmura\\dropbox\\programowanie\\projekty\\NetBeans\\TimWebAppAndroid\\work\\plik_" + currentTimeMillis() + ".jpg");
             fos.write(bytes);
             fos.close();
         } catch (FileNotFoundException ex) {
