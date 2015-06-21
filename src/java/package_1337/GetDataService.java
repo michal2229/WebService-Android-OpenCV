@@ -27,13 +27,13 @@ public class GetDataService {
      * This is a sample web service operation
      */
     @WebMethod(operationName = "hello")
-    public String sayHello(@WebParam(name = "name") String txt) {
+    public String sayHello(@WebParam(name = "wiadomosc") String txt) {
         System.out.println("txt: " + txt);
         return "Hello " + txt + "!";
     }
     
     @WebMethod(operationName = "getPhoto")
-    public String getPhoto(@WebParam(name = "photo") String txt) {
+    public String getPhoto(@WebParam(name = "wiadomosc") String txt) {
         //System.out.println(txt);
         
         try {
@@ -56,5 +56,11 @@ public class GetDataService {
         }
  
         return "Odebrano wiadomosc o dlugosci " + txt.length() + ".";
+    }
+    
+    @WebMethod(operationName = "startPrzetwarzania")
+    public String startPrzetwarzania(@WebParam(name = "wiadomosc") String txt) {
+        System.out.println("Rozpoczynanie przetwarzania. Sposob przetwarzania: " + txt);
+        return "Rozpoczynanie przetwarzania. Sposob przetwarzania: " + txt;
     }
 }
