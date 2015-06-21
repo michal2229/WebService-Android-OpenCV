@@ -22,10 +22,8 @@ import java.util.logging.Logger;
  */
 @WebService(serviceName = "GetDataService")
 public class GetDataService {
-
-    /**
-     * This is a sample web service operation
-     */
+    static int i = 0;
+    
     @WebMethod(operationName = "hello")
     public String sayHello(@WebParam(name = "wiadomosc") String txt) {
         System.out.println("txt: " + txt);
