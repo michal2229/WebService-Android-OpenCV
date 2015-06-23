@@ -3,3 +3,5 @@ dist/TimWebAppAndroid.war
 build/web/
 work/
 /build/
+/dist/
+*.jpg
