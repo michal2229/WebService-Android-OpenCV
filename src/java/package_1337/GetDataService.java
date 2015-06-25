@@ -14,6 +14,8 @@ import javax.jws.WebService;
 import javax.jws.WebMethod;
 import javax.jws.WebParam;
 import java.util.Base64;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.xml.ws.WebServiceContext;
@@ -25,7 +27,7 @@ import javax.xml.ws.handler.MessageContext;
  */
 @WebService(serviceName = "GetDataService")
 public class GetDataService {
-    String rootPath = "d:\\dane\\chmura\\dropbox\\programowanie\\projekty\\NetBeans\\TimWebAppAndroid\\";
+    String rootPath = "d:\\dane\\chmura\\dropbox\\programowanie\\projekty\\NetBeans\\TimWebAppAndroid";
     static int i = 0;
     
     @Resource
@@ -48,7 +50,7 @@ public class GetDataService {
         String clientLogin = null;
         String clientPassword = null;
         
-        Bean.load(); 
+        
         
         Uzytkownik u = new Uzytkownik("", clientIp);
         if (Bean.isUzytkownikZalogowany(u))
@@ -78,6 +80,26 @@ public class GetDataService {
         
         System.out.println("txt: " + txt);
         return "niepoprawne dane";
+    }
+    
+    @WebMethod(operationName = "wyloguj")
+    public String wyloguj(@WebParam(name = "wiadomosc") String txt) {
+        MessageContext mc = wsContext.getMessageContext();
+        HttpServletRequest req = (HttpServletRequest)mc.get(MessageContext.SERVLET_REQUEST); 
+        String clientIp =  req.getRemoteAddr(); 
+        String clientLogin = null;
+        String clientPassword = null;
+        
+        Bean.load(); 
+        
+        Uzytkownik u = new Uzytkownik("", clientIp);
+        if (Bean.isUzytkownikZalogowany(u)) {
+            Bean.wylogujUzytkownika(u);
+            return "wylogowano"; 
+        }
+             
+        //System.out.println("txt: " + txt);
+        return "wylogowany";
     }
     
     @WebMethod(operationName = "rejestracja")
@@ -186,7 +208,7 @@ public class GetDataService {
             }
 
 
-            return "Odebrano wiadomosc o dlugosci " + txt.length() + " from " + clientIp + ".";
+            return "Odebrano wiadomosc o dlugosci " + txt.length() + " from " + clientLogin + ".";
         }
     
         return "uzytkownik nie jest zalogowany: " + clientIp;
@@ -194,8 +216,29 @@ public class GetDataService {
     
     @WebMethod(operationName = "listaKont")
     public String listaKont(@WebParam(name = "wiadomosc") String txt) {
-        Bean.load();
+        
         return Bean.getListaKont();
+    }
+    
+    @WebMethod(operationName = "listaProjektow")
+    public String listaProjektow(@WebParam(name = "wiadomosc") String txt) {
+        MessageContext mc = wsContext.getMessageContext();
+        HttpServletRequest req = (HttpServletRequest)mc.get(MessageContext.SERVLET_REQUEST); 
+        String clientIp =  req.getRemoteAddr(); 
+        String clientLogin = null;
+        
+        Uzytkownik u = new Uzytkownik("", clientIp);
+        
+        if (Bean.isUzytkownikZalogowany(u)) {
+            clientLogin = Bean.getUzytkownikLogin(u);
+            
+            return "oczekujące: \n" + 
+                    ZarzadzaniePlikami.getZadaniaNaLiscie(ZarzadzaniePlikami.listaZadanOczekujacych, clientLogin) +
+                    "\nprzetworzone: \n" +
+                    ZarzadzaniePlikami.getZadaniaNaLiscie(ZarzadzaniePlikami.listaZadanUkonczonych, clientLogin);
+        }
+        
+        return "uzytkownik nie jest zalogowany: " + clientIp;
     }
     
         @WebMethod(operationName = "listaZalogowanych")
@@ -219,6 +262,14 @@ public class GetDataService {
         if (Bean.isUzytkownikZalogowany(u)) {
             clientLogin = Bean.getUzytkownikLogin(u);
             clientProjectName = Bean.getUzytkownikAktywnyProjekt(u);
+            
+            
+            try {
+                ZarzadzaniePlikami.dodajZadanie(clientLogin, clientProjectName);
+                ZarzadzaniePlikami.wyswietlZadaniaNaLiscie(ZarzadzaniePlikami.listaZadanOczekujacych, clientLogin);
+            } catch (IOException ex) {
+                return ex.getMessage();
+            }
         
             System.out.println("Rozpoczynanie przetwarzania. Sposob przetwarzania: " + txt);
             return "Rozpoczynanie przetwarzania. Sposob przetwarzania: " + txt;

@@ -7,6 +7,7 @@ package package_1337;
 
 import java.awt.Dimension;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -15,6 +16,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static java.lang.System.out;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.bytedeco.javacpp.opencv_calib3d;
 import org.bytedeco.javacpp.opencv_core;
@@ -42,7 +45,7 @@ import org.bytedeco.javacv.FrameGrabber;
     }
 }*/
 
-public class OperacjeOpenCv {
+public class OperacjeOpenCv implements Runnable {
     static int VID = 0; static int SEQ = 1; static int IMG = 2;
     static int STD = 0; static int STAB = 1; 
     static int iloscBledowOdczytu = 0;
@@ -57,6 +60,38 @@ public class OperacjeOpenCv {
     static opencv_features2d.ORB detektorOrb = new opencv_features2d.ORB(5000, 1.4f, 8, 31, 0, 2, opencv_features2d.ORB.HARRIS_SCORE, 31); // opisac parametry
     static opencv_features2d.BFMatcher matcherBFM = new opencv_features2d.BFMatcher();
 //	static opencv_features2d.FlannBasedMatcher matcherFBM = new opencv_features2d.FlannBasedMatcher();
+
+    static List<Zadanie> lWej;
+    static List<Zadanie> lWyj;
+    
+public static void init(List<Zadanie> lwe, List<Zadanie> lwy) {
+    lWej = lwe; lWyj = lwy;
+    System.out.println("OperacjeOpenCv.init(List<Zadanie> lwe, List<Zadanie> lwy)");
+}
+    
+@Override
+public void run() {
+    System.out.println("OperacjeOpenCv.run()");
+    while (!lWej.isEmpty()) {
+        ZarzadzaniePlikami.changeZadanieStatus(lWej, lWej.get(0), "przetwarzany");
+        ZarzadzaniePlikami.makeFoldersWork(lWej.get(0));
+        try {
+            operuj(lWej.get(0).getSciezkaPlikow() + "\\obrazki", lWej.get(0).getSciezkaPlikow() + "\\wyniki", 2, 1);
+            ZarzadzaniePlikami.changeZadanieStatus(lWej, lWej.get(0), "ukonczono");
+            lWyj.add(lWej.remove(0));
+        } catch (IOException ex) {
+            ZarzadzaniePlikami.changeZadanieStatus(lWej, lWej.get(0), "blad IOException");
+            lWyj.add(lWej.remove(0));
+            Logger.getLogger(OperacjeOpenCv.class.getName()).log(Level.SEVERE, null, ex);  
+        } catch (FrameGrabber.Exception ex) {
+            ZarzadzaniePlikami.changeZadanieStatus(lWej, lWej.get(0), "blad FrameGrabber.Exception");
+            lWyj.add(lWej.remove(0));
+            Logger.getLogger(OperacjeOpenCv.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+}
+
+
 
 public static void operuj(String sciezkaZrodlowa, String sciezkaDocelowa, int typWyjscia, int typStabilizacji) throws IOException, org.bytedeco.javacv.FrameGrabber.Exception {
     List<Path> listaPlikow = new ArrayList<>();
@@ -122,7 +157,13 @@ public static void operuj(String sciezkaZrodlowa, String sciezkaDocelowa, int ty
         }
         // to bedzie z ifem
         // zapis obrazka usrednionego
-        opencv_highgui.imwrite(nazwaFolderuDocelowego.toAbsolutePath().toString() + "\\_wynik-usredniania_" + System.currentTimeMillis() + "." + "png", bazaDoUsredniania);
+        try {
+            opencv_highgui.imwrite(nazwaFolderuDocelowego.toAbsolutePath().toString() + "\\_wynik-usredniania_" + System.currentTimeMillis() + "." + "png", bazaDoUsredniania);
+        } catch (Exception e) {
+            PrintWriter out = new PrintWriter(nazwaFolderuDocelowego.toAbsolutePath().toString() + "\\log.txt");
+            out.println("nie udalo sie zapisac pliku, prawdopodobnie nie bylo wyniku");
+            out.close();
+        }
     } 
     else {
             out.println("Zbyt malo plikow w folderze '" + sciezkaZrodlowa + "'.");
@@ -959,4 +1000,6 @@ public static void zapiszJakoObrazy(String sciezkaZrodlowa, String sciezkaDocelo
 
 
 }
+
+
 }

@@ -2,6 +2,8 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml"
       xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+      xmlns:p="http://primefaces.org/ui"
       xmlns:f="http://xmlns.jcp.org/jsf/core"
       xmlns:c="http://xmlns.jcp.org/jsp/jstl/core">
     <h:head>
@@ -9,21 +11,25 @@
         <link href="css/style.css" rel="stylesheet" />
     </h:head>
     <h:body>
-        Hello from Facelets
-        <br/>
+        Galeria <br />
         
-        <h:form>
-            <c:if test="${contextBean.zalogowany}">
-                <h:commandButton action="galeria" value="galeria" />
-                <h:commandButton action="#{contextBean.wyloguj()}" value="wyloguj" />
-                
-                
 
-            </c:if>
-            <c:if test="${not contextBean.zalogowany}">
-                <h:commandButton action="#{contextBean.zaloguj()}" value="zaloguj" />
-            </c:if>
-        </h:form>
+
+    <p:galleria value="#{contextBean.dbImagesString}" var="image" >
+        <p:graphicImage width="690" url="#{image}"/>
+    </p:galleria>
+        
+    <h:form>
+        <h:commandButton action="index" value="index" />
+        <h:commandButton action="#{contextBean.wyloguj()}" value="wyloguj" />
+    </h:form>
+
+
+
+
+        
+        
+        
         <br/> #{contextBean.wiadomosc}
     </h:body>
 </html>

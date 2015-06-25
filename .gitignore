@@ -5,3 +5,5 @@ work/
 /build/
 /dist/
 *.jpg
+web/resources/users/
+*.ser

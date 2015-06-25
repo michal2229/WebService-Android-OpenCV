@@ -2,29 +2,24 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml"
       xmlns:h="http://xmlns.jcp.org/jsf/html"
-      xmlns:f="http://xmlns.jcp.org/jsf/core"
       xmlns:c="http://xmlns.jcp.org/jsp/jstl/core">
     <h:head>
         <title>Facelet Title</title>
         <link href="css/style.css" rel="stylesheet" />
     </h:head>
     <h:body>
-        Hello from Facelets
-        <br/>
-        
+        login page
         <h:form>
-            <c:if test="${contextBean.zalogowany}">
-                <h:commandButton action="galeria" value="galeria" />
-                <h:commandButton action="#{contextBean.wyloguj()}" value="wyloguj" />
-                
-                
-
-            </c:if>
-            <c:if test="${not contextBean.zalogowany}">
+            <h:inputText value="#{contextBean.login}" />
+            <h:inputText value="#{contextBean.haslo}" />
+            <c:if test="${contextBean.zarejestrowany}">
                 <h:commandButton action="#{contextBean.zaloguj()}" value="zaloguj" />
             </c:if>
+            <c:if test="${not contextBean.zarejestrowany}">
+            <h:commandButton action="#{contextBean.zarejestruj()}" value="zarejestruj" />
+            </c:if>
+            <br/> #{contextBean.wiadomosc}
         </h:form>
-        <br/> #{contextBean.wiadomosc}
     </h:body>
 </html>
 

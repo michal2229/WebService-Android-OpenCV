@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ZarzadzaniePlikami {
+    public static final String ROOT_PATH = "d:\\dane\\chmura\\dropbox\\programowanie\\projekty\\NetBeans\\TimWebAppAndroid\\web\\resources";
     static List<Zadanie> listaZadanOczekujacych = null;
     static List<Zadanie> listaZadanUkonczonych = null;
     // TODO folder wyniki tworzony bedzie po zakonczeniu wykonywania serii zdjec
@@ -43,21 +44,23 @@ public class ZarzadzaniePlikami {
         System.out.println(getZadaniaNaLiscie(listaZadanUkonczonych));
         save();
     }*/
+    
+    
 
     private static void load() {
         try {
-            FileInputStream fileIn = new FileInputStream("listaZadanOczekuj�cych.ser");
+            FileInputStream fileIn = new FileInputStream(makePath(ROOT_PATH, "\\listaZadanOczekujacych.ser"));
             ObjectInputStream in = new ObjectInputStream(fileIn);
             listaZadanOczekujacych = (List<Zadanie>) in.readObject();
             in.close();
         fileIn.close();
         } catch (Exception e) {
-            System.out.println("Nie znaleziono zapisanej listy, tworzenie nowej listy listaZadanOczekuj�cych");
+            System.out.println("Nie znaleziono zapisanej listy, tworzenie nowej listy listaZadanOczekujacych");
             listaZadanOczekujacych = new ArrayList<Zadanie>();
         } 
 
         try {
-            FileInputStream fileIn = new FileInputStream("listaZadanUkonczonych.ser");
+            FileInputStream fileIn = new FileInputStream(makePath(ROOT_PATH, "\\listaZadanUkonczonych.ser"));
             ObjectInputStream in = new ObjectInputStream(fileIn);
             listaZadanUkonczonych = (List<Zadanie>) in.readObject();
             in.close();
@@ -70,7 +73,7 @@ public class ZarzadzaniePlikami {
 
     private static void save() {
         try {
-            FileOutputStream fileOut = new FileOutputStream("listaZadanOczekujacych.ser");
+            FileOutputStream fileOut = new FileOutputStream(makePath(ROOT_PATH, "\\listaZadanOczekujacych.ser"));
             ObjectOutputStream out = new ObjectOutputStream(fileOut);
             out.writeObject(listaZadanOczekujacych);
             out.close();
@@ -81,7 +84,7 @@ public class ZarzadzaniePlikami {
         } 
 
         try {
-            FileOutputStream fileOut = new FileOutputStream("listaZadanUkonczonych.ser");
+            FileOutputStream fileOut = new FileOutputStream(makePath(ROOT_PATH, "\\listaZadanUkonczonych.ser"));
             ObjectOutputStream out = new ObjectOutputStream(fileOut);
             out.writeObject(listaZadanUkonczonych);
             out.close();
@@ -92,90 +95,120 @@ public class ZarzadzaniePlikami {
         } 
     }
     
-    private static String makePath(String ... str) {
+    public static void dodajZadanie(String nazwaUzytkownika, String nazwaProjektu) throws IOException {
+        load();
+        new File(makePath(ROOT_PATH, "users",  nazwaUzytkownika, nazwaProjektu, "wyniki")).mkdirs();
+        
+        
+        System.out.println("listaZadanOczekujacych.isEmpty(): " + listaZadanOczekujacych.isEmpty());
+        if (listaZadanOczekujacych.isEmpty()) {
+            scanFolders(listaZadanOczekujacych);
+            if (!listaZadanOczekujacych.isEmpty()) {
+                System.out.println("listaZadanOczekujacych.isEmpty(): true -> false");
+                OperacjeOpenCv oocWorker = new OperacjeOpenCv();
+                oocWorker.init(listaZadanOczekujacych, listaZadanUkonczonych);
+                oocWorker.run();
+            }
+        }
+        save();
+    }
+    
+    public static String makePath(String ... str) {
         return String.join("\\", str);
     }
-
-    @SuppressWarnings("unused")
-    private static void makeFoldersDebug() {
-        String usersDir = "users";
-        String[] folderyRobocze = {"debug", "dopasowane", "filmiki", "obrazki", "usrednione", "wydobyte", "wyniki"};
-
-        String[] userNames = {"zenek", "stasiek", "zbyszek"};
-        String[] projectNames = {"p1", "p2", "p3", "p4"};
-
-        for (String un : userNames)
-            for (String pn : projectNames)
-                for (String fr : folderyRobocze)
-                    new File(makePath(usersDir, un, pn, fr)).mkdirs();
+    
+    public static void changeZadanieStatus (List<Zadanie> l, Zadanie z, String status) {
+        int index = l.indexOf(z);
+        Zadanie zTmp = l.get(index);
+        zTmp.setStatus(status);
+        l.set(index, zTmp);
     }
 
-    private static void scanFolders(List<Zadanie> lista, File ... root) throws IOException {
+    
+    public static void makeFoldersWork(Zadanie z) {
+        String[] folderyRobocze = {"debug", "dopasowane", "filmiki", "usrednione", "wydobyte"};
+
+        for (String fr : folderyRobocze)
+            new File(makePath(ROOT_PATH, "users", z.getNazwaUzytkownika() , z.getNazwaProjektu(), fr)).mkdirs();
+    }
+
+    public static void scanFolders(List<Zadanie> lista, File ... root) throws IOException {
         File[] listOfFiles;
         int plikowWynikowych = -1;
         int plikowZrodlowych = -1;
+        
         if (root.length != 1) {
-            File users = new File("users");
+            File users = new File(makePath(ROOT_PATH, "users"));
             listOfFiles = users.listFiles();
         }
         else {
             listOfFiles = root[0].listFiles();
         }
 
-    for (File f : listOfFiles) {
-        System.out.println(f);
-        if (f.isDirectory()) {
-                scanFolders(lista, f);
-            }
-        if (f.getName().equals("obrazki")) plikowZrodlowych = f.listFiles().length;
-        if (f.getName().equals("wyniki")) plikowWynikowych = f.listFiles().length;
-    }
-
-    if (plikowWynikowych == 0)
-        if (plikowZrodlowych > 1) {
-            String sciezka = root[0].toString();
-            String[] sciezkaArray = sciezka.split("\\\\");
-
-            String userName = sciezkaArray[1];
-            String projectName = sciezkaArray[2];
-
-            Zadanie z = new Zadanie(userName, projectName, sciezka + "\\obrazki", "oczekuje");
-            if (!lista.contains(z)) lista.add(z);
-            System.out.println("We have a situation: " + z);
+        for (File f : listOfFiles) {
+            System.out.println(f);
+            if (f.isDirectory()) {
+                    scanFolders(lista, f);
+                }
+            if (f.getName().equals("obrazki")) plikowZrodlowych = f.listFiles().length;
+            if (f.getName().equals("wyniki")) plikowWynikowych = f.listFiles().length;
         }
+
+        if (plikowWynikowych == 0)
+            if (plikowZrodlowych > 1) {
+                String sciezka = root[0].toString();
+                String[] sciezkaArray = sciezka.split("\\\\");
+
+                String userName = sciezkaArray[sciezkaArray.length - 2];
+                String projectName = sciezkaArray[sciezkaArray.length - 1];
+
+                Zadanie z = new Zadanie(userName, projectName, sciezka, "oczekuje");
+                if (!lista.contains(z)) {
+                    lista.add(z);
+                }
+                System.out.println("We have a situation: " + z);
+            }
     }
 
 
-    private static void wyswietlZadaniaNaLiscie(List<Zadanie> lista, String ... user) {
+    public static void wyswietlZadaniaNaLiscie(List<Zadanie> lista, String ... user) {
         int i = 0;
-        for (Zadanie z : lista) {
-            if (user.length == 0) {
-                i++;
-                System.out.println(i + ". " + z);
-            }
-            else {
-                if (z.getNazwaUzytkownika().equals(user[0])) {
+        if (lista == null) {
+            System.out.println("brak zadan na liscie");
+        } else {
+            for (Zadanie z : lista) {
+                if (user.length == 0) {
                     i++;
                     System.out.println(i + ". " + z);
-                    // todo: moze zamiast wyswietlac tutaj, laczyc to w string i zwracac?
-                    // duzo zalet powyzszego rozwiazania
+                }
+                else {
+                    if (z.getNazwaUzytkownika().equals(user[0])) {
+                        i++;
+                        System.out.println(i + ". " + z);
+                        // todo: moze zamiast wyswietlac tutaj, laczyc to w string i zwracac?
+                        // duzo zalet powyzszego rozwiazania
+                    }
                 }
             }
         }
     }
 
-    private static String getZadaniaNaLiscie(List<Zadanie> lista, String ... user) {
+    public static String getZadaniaNaLiscie(List<Zadanie> lista, String ... user) {
         int i = 0;
         String str = "";
-        for (Zadanie z : lista) {
-            if (user.length == 0) {
-                i++;
-                str += i + ". " + z;
-            }
-            else {
-                if (z.getNazwaUzytkownika().equals(user[0])) {
+        if (lista == null) {
+            return "brak zadan na liscie";
+        } else {
+            for (Zadanie z : lista) {
+                if (user.length == 0) {
                     i++;
                     str += i + ". " + z;
+                }
+                else {
+                    if (z.getNazwaUzytkownika().equals(user[0])) {
+                        i++;
+                        str += i + ". " + z;
+                    }
                 }
             }
         }
@@ -183,7 +216,8 @@ public class ZarzadzaniePlikami {
     }
 
 
-    static void test() {
+    
+    public void test() {
         List<Zadanie> lst = new ArrayList<Zadanie>();;
         Zadanie z1 = new Zadanie("zbyszek", "p31", "users\\zbyszek\\p31\\obrazki", "oczekuje");
         Zadanie z2 = new Zadanie("zbyszek", "p31", "users\\zbyszek\\p31\\obrazki", "przetwarzany");
@@ -203,74 +237,10 @@ public class ZarzadzaniePlikami {
 
         assert makePath("a", "b", "c", "d", "e").equals("a\\b\\c\\d\\e");
     }
+    
+    
 }
 
-class Zadanie implements java.io.Serializable {
-    /**
-     * 
-     */
-    private static final long serialVersionUID = -8091924837469902956L;
 
-    String nazwaUzytkownika;
-    String nazwaProjektu;
-    String sciezkaPlikow;
-    String status;
-
-    public Zadanie(String nazwaUzytkownika, String nazwaProjektu, String sciezkaPlikow, String status) {
-        super();
-        this.nazwaUzytkownika = nazwaUzytkownika;
-        this.nazwaProjektu = nazwaProjektu;
-        this.sciezkaPlikow = sciezkaPlikow;
-        this.status = status;
-    }
-
-    public String getNazwaUzytkownika() {
-        return nazwaUzytkownika;
-    }
-
-    public void setNazwaUzytkownika(String nazwaUzytkownika) {
-        this.nazwaUzytkownika = nazwaUzytkownika;
-    }
-
-    public String getNazwaProjektu() {
-        return nazwaProjektu;
-    }
-
-    public void setNazwaProjektu(String nazwaProjektu) {
-        this.nazwaProjektu = nazwaProjektu;
-    }
-
-    public String getSciezkaPlikow() {
-        return sciezkaPlikow;
-    }
-
-    public void setSciezkaPlikow(String sciezkaPlikow) {
-        this.sciezkaPlikow = sciezkaPlikow;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    @Override
-    public String toString() {
-        return "Zadanie [nazwaUzytkownika=" + nazwaUzytkownika
-                        + ", nazwaProjektu=" + nazwaProjektu
-                        + ", sciezkaPlikow=" + sciezkaPlikow
-                        + ", status=" + status
-                        + "]";
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        Zadanie z = (Zadanie) o;
-
-        return nazwaUzytkownika.equals(z.getNazwaUzytkownika()) && nazwaProjektu.equals(z.getNazwaProjektu()) && sciezkaPlikow.equals(z.getSciezkaPlikow());
-    }
-}
 
 

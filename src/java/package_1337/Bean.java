@@ -27,7 +27,7 @@ import javax.faces.bean.SessionScoped;
 @ManagedBean()
 @ApplicationScoped
 public class Bean {
-    public static final String ROOT_PATH = "d:\\dane\\chmura\\dropbox\\programowanie\\projekty\\NetBeans\\TimWebAppAndroid\\";
+    public static final String ROOT_PATH = "d:\\dane\\chmura\\dropbox\\programowanie\\projekty\\NetBeans\\TimWebAppAndroid\\web\\resources";
     public static List<Uzytkownik> listaKont = null; //new ArrayList<Uzykownik>();
     public static List<Uzytkownik> listaZalogowanych = null; //new ArrayList<Uzykownik>();
     
@@ -37,7 +37,7 @@ public class Bean {
         
         if (listaKont == null) {
             try {
-                FileInputStream fileIn = new FileInputStream(ROOT_PATH + "listaKont.ser");
+                FileInputStream fileIn = new FileInputStream(ROOT_PATH + "\\" + "listaKont.ser");
                 ObjectInputStream in = new ObjectInputStream(fileIn);
                 listaKont = (List<Uzytkownik>) in.readObject();
                 in.close();
@@ -56,7 +56,7 @@ public class Bean {
 
     static void save() {
         try {
-            FileOutputStream fileOut = new FileOutputStream(ROOT_PATH + "listaKont.ser");
+            FileOutputStream fileOut = new FileOutputStream(ROOT_PATH + "\\" + "listaKont.ser");
             ObjectOutputStream out = new ObjectOutputStream(fileOut);
             out.writeObject(listaKont);
             out.close();
@@ -69,19 +69,23 @@ public class Bean {
     }
     
     public static Uzytkownik getUzytkownikKonto(Uzytkownik u) {
+        load();
         return listaKont.get(listaKont.indexOf(u));
     }
     
     
     public static String getUzytkownikLogin(Uzytkownik u) {
+        load();
         return listaZalogowanych.get(listaZalogowanych.indexOf(u)).getLogin();
     }
     
     public static String getUzytkownikAktywnyProjekt(Uzytkownik u) {
+        load();
         return listaKont.get(listaKont.indexOf(u)).getAktywnyProjekt();
     }
     
     public static void setUzytkownikAktywnyProjekt(Uzytkownik u, String nazwaProjektu) {
+        load();
         int index = listaZalogowanych.indexOf(u);
         Uzytkownik uTmp = listaZalogowanych.get(index);
         uTmp.setAktywnyProjekt(nazwaProjektu);
@@ -94,33 +98,45 @@ public class Bean {
     }
     
     public static boolean validateUzytkownik(Uzytkownik u) {
-        if (listaKont.contains(u))
-            return listaKont.get(listaKont.indexOf(u)).getHaslo().equals(u.getHaslo());
-        else
+        load();
+        try {
+            if (listaKont.contains(u))
+                return listaKont.get(listaKont.indexOf(u)).getHaslo().equals(u.getHaslo());
+            else
+                return false;
+        } catch (Exception e) {
             return false;
+        }
     }
     
     public static boolean isUzytkownikZalogowany(Uzytkownik u) {
+        load();
         return listaZalogowanych.contains(u);
     }
     
     public static boolean isUzytkownikZarejestrowany(Uzytkownik u) {
+        load();
         return listaKont.contains(u);
     }
     
     public static void zalogujUzytkownika(Uzytkownik u) {
+        load();
         listaZalogowanych.add(u);
     }
     
     public static void wylogujUzytkownika(Uzytkownik u) {
+        load();
         listaZalogowanych.remove(u);
     }
     
     public static void zarejestrujUzytkownika(Uzytkownik u) {
+        load();
         listaKont.add(u);
+        save();
     }
 
     static String getListaKont() {
+        load();
         String txt = "";
         int i = 0;
         
@@ -133,6 +149,7 @@ public class Bean {
     }
     
     static String getListaZalogowanych() {
+        load();
         String txt = "";
         int i = 0;
         
@@ -142,5 +159,10 @@ public class Bean {
         }
         
         return txt;
+    }
+    
+    public static String makeProjectPath(String userName, String projectName) {
+        String[] tmpPath =  {ROOT_PATH, userName, projectName};
+        return String.join("\\", tmpPath);
     }
 }
