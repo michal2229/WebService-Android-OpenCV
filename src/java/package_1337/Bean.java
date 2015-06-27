@@ -18,6 +18,7 @@ import java.util.logging.Logger;
 import javax.faces.bean.ApplicationScoped;
 import javax.faces.bean.ManagedBean;
 import javax.faces.bean.SessionScoped;
+import static package_1337.ZarzadzaniePlikami.ROOT_PATH;
 
 /**
  *
@@ -27,12 +28,27 @@ import javax.faces.bean.SessionScoped;
 @ManagedBean()
 @ApplicationScoped
 public class Bean {
-    public static final String ROOT_PATH = "d:\\dane\\chmura\\dropbox\\programowanie\\projekty\\NetBeans\\TimWebAppAndroid\\web\\resources";
+    //public static final String ROOT_PATH = "d:\\dane\\chmura\\dropbox\\programowanie\\projekty\\NetBeans\\TimWebAppAndroid\\web\\resources";
     public static List<Uzytkownik> listaKont = null; //new ArrayList<Uzykownik>();
     public static List<Uzytkownik> listaZalogowanych = null; //new ArrayList<Uzykownik>();
     
     static void load() {
-        if (listaZalogowanych == null) listaZalogowanych = new ArrayList<Uzytkownik>();
+        if (listaZalogowanych == null) 
+            try {
+                FileInputStream fileIn = new FileInputStream(ROOT_PATH + "\\" + "listaZalogowanych.ser");
+                ObjectInputStream in = new ObjectInputStream(fileIn);
+                listaZalogowanych = (List<Uzytkownik>) in.readObject();
+                in.close();
+                fileIn.close();
+                //listaZalogowanych = new ArrayList<Uzykownik>();
+            } catch (FileNotFoundException ex) {
+                System.out.println("Nie znaleziono zapisanej listy, tworzenie nowej listy listaZalogowanych");
+                listaZalogowanych = new ArrayList<Uzytkownik>();
+            } catch (IOException ex) {
+                Logger.getLogger(Bean.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (ClassNotFoundException ex) {
+                Logger.getLogger(Bean.class.getName()).log(Level.SEVERE, null, ex);
+            }
         
         
         if (listaKont == null) {
@@ -64,7 +80,18 @@ public class Bean {
             System.out.println("Serialized data is saved in listaKont.ser");
         } catch (Exception e) {
             e.printStackTrace();
-        } 
+        }
+        
+        try {
+            FileOutputStream fileOut = new FileOutputStream(ROOT_PATH + "\\" + "listaZalogowanych.ser");
+            ObjectOutputStream out = new ObjectOutputStream(fileOut);
+            out.writeObject(listaZalogowanych);
+            out.close();
+            fileOut.close();
+            System.out.println("Serialized data is saved in listaZalogowanych.ser");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         
     }
     
@@ -95,6 +122,7 @@ public class Bean {
         uTmp = listaKont.get(index);
         uTmp.setAktywnyProjekt(nazwaProjektu);
         listaKont.set(index, uTmp);
+        save();
     }
     
     public static boolean validateUzytkownik(Uzytkownik u) {
@@ -122,11 +150,13 @@ public class Bean {
     public static void zalogujUzytkownika(Uzytkownik u) {
         load();
         listaZalogowanych.add(u);
+        save();
     }
     
     public static void wylogujUzytkownika(Uzytkownik u) {
         load();
         listaZalogowanych.remove(u);
+        save();
     }
     
     public static void zarejestrujUzytkownika(Uzytkownik u) {

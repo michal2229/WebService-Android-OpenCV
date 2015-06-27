@@ -187,16 +187,23 @@ public class ContextBean implements Serializable {
         //List<Path> listaObrazkow = new ArrayList<>();
         i = 0;
         dbImagesString = new ArrayList<>();
-        
-        for (File projekt :(new File(makePath(ROOT_PATH, "users", login))).listFiles()) {
-            String projectName = projekt.getName();
-            System.out.println("projekt");
-            for (File obrazek : (new File(projekt.getAbsolutePath() + "\\wyniki")).listFiles()) {
-                System.out.println("obrazek " + obrazek.getCanonicalPath());
-                
-                dbImagesString.add("/resources/users/" + login + "/" + projectName + "/wyniki/" + obrazek.getName() );
-                System.out.println("dbImages.size() = " + dbImages.size());
+        try {
+            for (File projekt :(new File(makePath(ROOT_PATH, "users", login))).listFiles()) {
+                String projectName = projekt.getName();
+                System.out.println("projekt");
+                try {
+                for (File obrazek : (new File(projekt.getAbsolutePath() + "\\wyniki")).listFiles()) {
+                    System.out.println("obrazek " + obrazek.getCanonicalPath());
+
+                    dbImagesString.add("/resources/users/" + login + "/" + projectName + "/wyniki/" + obrazek.getName() );
+                    System.out.println("dbImages.size() = " + dbImages.size());
+                }
+                } catch (Exception e) {
+                    System.out.println("nie ma folderu z wynikami");                    
+                }
             }
+        } catch (Exception e) {
+            System.out.println("blad w getDbImagesString(): " + e.getMessage());
         }
             
         return dbImagesString;

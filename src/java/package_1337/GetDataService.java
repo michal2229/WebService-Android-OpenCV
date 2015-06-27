@@ -20,6 +20,7 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.xml.ws.WebServiceContext;
 import javax.xml.ws.handler.MessageContext;
+import static package_1337.ZarzadzaniePlikami.ROOT_PATH;
 
 /**
  *
@@ -27,7 +28,7 @@ import javax.xml.ws.handler.MessageContext;
  */
 @WebService(serviceName = "GetDataService")
 public class GetDataService {
-    String rootPath = "d:\\dane\\chmura\\dropbox\\programowanie\\projekty\\NetBeans\\TimWebAppAndroid";
+    //String rootPath = "d:\\dane\\chmura\\dropbox\\programowanie\\projekty\\NetBeans\\TimWebAppAndroid";
     static int i = 0;
     
     @Resource
@@ -53,8 +54,9 @@ public class GetDataService {
         
         
         Uzytkownik u = new Uzytkownik("", clientIp);
-        if (Bean.isUzytkownikZalogowany(u))
-            return "zalogowany1";
+        Bean.wylogujUzytkownika(u);
+//        if (Bean.isUzytkownikZalogowany(u))
+//            return "zalogowany1";
         
         if (txt.contains(";")) {
             String[] loginhaslo = txt.split(";");
@@ -67,8 +69,9 @@ public class GetDataService {
             u.setLogin(clientLogin);
             u.setHaslo(clientPassword);
             
-            if (Bean.isUzytkownikZalogowany(u))
-                return "zalogowany2";
+            Bean.wylogujUzytkownika(u);
+//            if (Bean.isUzytkownikZalogowany(u))
+//                return "zalogowany2";
             
             if (Bean.validateUzytkownik(u)) {
                 u = Bean.getUzytkownikKonto(u);
@@ -90,7 +93,7 @@ public class GetDataService {
         String clientLogin = null;
         String clientPassword = null;
         
-        Bean.load(); 
+        //Bean.load(); 
         
         Uzytkownik u = new Uzytkownik("", clientIp);
         if (Bean.isUzytkownikZalogowany(u)) {
@@ -110,7 +113,7 @@ public class GetDataService {
         String clientLogin = null;
         String clientPassword = null;
         
-        Bean.load();
+        //Bean.load();
         
         Uzytkownik u = new Uzytkownik("", clientIp);
         if (Bean.isUzytkownikZalogowany(u))
@@ -150,7 +153,7 @@ public class GetDataService {
         HttpServletRequest req = (HttpServletRequest)mc.get(MessageContext.SERVLET_REQUEST); 
         String clientIp =  req.getRemoteAddr(); 
         
-        Bean.load();
+        //Bean.load();
         
         Uzytkownik u = new Uzytkownik("", clientIp);
         
@@ -172,7 +175,7 @@ public class GetDataService {
         String clientLogin = null;
         String clientProjectName = null;
         
-        Bean.load();
+        //Bean.load();
         
         Uzytkownik u = new Uzytkownik("", clientIp);
         
@@ -182,7 +185,7 @@ public class GetDataService {
 
             if (clientProjectName == null) {
                 Bean.setUzytkownikAktywnyProjekt(u, "project_" + System.currentTimeMillis());
-                Bean.save();
+                //Bean.save();
             }
             clientProjectName = Bean.getUzytkownikAktywnyProjekt(u);
 
@@ -191,7 +194,7 @@ public class GetDataService {
                 byte[] bytes = decoder.decode(txt);
 
                 FileOutputStream fos ;
-                String filename = rootPath + "\\users\\" + clientLogin + "\\" + clientProjectName + "\\obrazki";
+                String filename = ROOT_PATH + "\\users\\" + clientLogin + "\\" + clientProjectName + "\\obrazki";
                 new File(filename).mkdirs();
                 fos = new FileOutputStream(filename + "\\plik_" + currentTimeMillis() + ".jpg");
                 fos.write(bytes);
@@ -243,7 +246,7 @@ public class GetDataService {
     
         @WebMethod(operationName = "listaZalogowanych")
     public String listaZalogowanych(@WebParam(name = "wiadomosc") String txt) {
-        Bean.load();
+        //Bean.load();
         return Bean.getListaZalogowanych();
     }
     
@@ -255,7 +258,7 @@ public class GetDataService {
         String clientLogin = null;
         String clientProjectName = null;
         
-        Bean.load();
+        //Bean.load();
         
         Uzytkownik u = new Uzytkownik("", clientIp);
         
@@ -266,8 +269,9 @@ public class GetDataService {
             
             try {
                 ZarzadzaniePlikami.dodajZadanie(clientLogin, clientProjectName);
-                ZarzadzaniePlikami.wyswietlZadaniaNaLiscie(ZarzadzaniePlikami.listaZadanOczekujacych, clientLogin);
+                //ZarzadzaniePlikami.wyswietlZadaniaNaLiscie(ZarzadzaniePlikami.listaZadanOczekujacych, clientLogin);
             } catch (IOException ex) {
+                System.out.println("cos jest nie tak... " + ex.getMessage());
                 return ex.getMessage();
             }
         
