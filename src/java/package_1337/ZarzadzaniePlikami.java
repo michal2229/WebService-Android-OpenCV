@@ -12,6 +12,7 @@ import java.util.List;
 public class ZarzadzaniePlikami {
     public static final String ROOT_PATH = "d:\\dane\\chmura\\dropbox\\programowanie\\projekty\\NetBeans\\TimWebAppAndroid\\web\\resources";
     static List<Zadanie> listaZadanOczekujacych = null;
+    static Zadanie zadaniePrzetwarzane = null;
     static List<Zadanie> listaZadanUkonczonych = null;
     // TODO folder wyniki tworzony bedzie po zakonczeniu wykonywania serii zdjec
     // TODO program przetwarzajacy bedzie oddzielnym watkiem workerem
@@ -48,17 +49,19 @@ public class ZarzadzaniePlikami {
     
 
     private static void load() {
-        try {
-            FileInputStream fileIn = new FileInputStream(makePath(ROOT_PATH, "\\listaZadanOczekujacych.ser"));
-            ObjectInputStream in = new ObjectInputStream(fileIn);
-            listaZadanOczekujacych = (List<Zadanie>) in.readObject();
-            in.close();
-        fileIn.close();
-        } catch (Exception e) {
-            System.out.println("Nie znaleziono zapisanej listy, tworzenie nowej listy listaZadanOczekujacych");
-            listaZadanOczekujacych = new ArrayList<Zadanie>();
-        } 
-
+//        try {
+//            FileInputStream fileIn = new FileInputStream(makePath(ROOT_PATH, "\\listaZadanOczekujacych.ser"));
+//            ObjectInputStream in = new ObjectInputStream(fileIn);
+//            listaZadanOczekujacych = (List<Zadanie>) in.readObject();
+//            in.close();
+//        fileIn.close();
+//        } catch (Exception e) {
+//            System.out.println("Nie znaleziono zapisanej listy, tworzenie nowej listy listaZadanOczekujacych");
+//            listaZadanOczekujacych = new ArrayList<Zadanie>();
+//        } 
+        
+        listaZadanOczekujacych = new ArrayList<Zadanie>();
+        
         try {
             FileInputStream fileIn = new FileInputStream(makePath(ROOT_PATH, "\\listaZadanUkonczonych.ser"));
             ObjectInputStream in = new ObjectInputStream(fileIn);
@@ -72,16 +75,16 @@ public class ZarzadzaniePlikami {
     }
 
     private static void save() {
-        try {
-            FileOutputStream fileOut = new FileOutputStream(makePath(ROOT_PATH, "\\listaZadanOczekujacych.ser"));
-            ObjectOutputStream out = new ObjectOutputStream(fileOut);
-            out.writeObject(listaZadanOczekujacych);
-            out.close();
-            fileOut.close();
-            System.out.println("Serialized data is saved in listaZadanOczekujacych.ser");
-        } catch (Exception e) {
-            // TODO Auto-generated catch block
-        } 
+//        try {
+//            FileOutputStream fileOut = new FileOutputStream(makePath(ROOT_PATH, "\\listaZadanOczekujacych.ser"));
+//            ObjectOutputStream out = new ObjectOutputStream(fileOut);
+//            out.writeObject(listaZadanOczekujacych);
+//            out.close();
+//            fileOut.close();
+//            System.out.println("Serialized data is saved in listaZadanOczekujacych.ser");
+//        } catch (Exception e) {
+//            System.out.println("zapis listy listaZadanOczekujacych.ser nie udal sie");
+//        } 
 
         try {
             FileOutputStream fileOut = new FileOutputStream(makePath(ROOT_PATH, "\\listaZadanUkonczonych.ser"));
@@ -91,7 +94,7 @@ public class ZarzadzaniePlikami {
             fileOut.close();
             System.out.println("Serialized data is saved in listaZadanUkonczonych.ser");
         } catch (Exception e) {
-            // TODO Auto-generated catch block
+            System.out.println("zapis listy listaZadanUkonczonych.ser nie udal sie");
         } 
     }
     
@@ -100,16 +103,22 @@ public class ZarzadzaniePlikami {
         new File(makePath(ROOT_PATH, "users",  nazwaUzytkownika, nazwaProjektu, "wyniki")).mkdirs();
         
         
-        System.out.println("listaZadanOczekujacych.isEmpty(): " + listaZadanOczekujacych.isEmpty());
-        if (listaZadanOczekujacych.isEmpty()) {
-            scanFolders(listaZadanOczekujacych);
-            if (!listaZadanOczekujacych.isEmpty()) {
-                System.out.println("listaZadanOczekujacych.isEmpty(): true -> false");
-                OperacjeOpenCv oocWorker = new OperacjeOpenCv();
-                oocWorker.init(listaZadanOczekujacych, listaZadanUkonczonych);
-                oocWorker.run();
-            }
+        System.out.println("listaZadanOczekujacych.isEmpty() = " + listaZadanOczekujacych.isEmpty());
+        System.out.println("liczba watkow = " + OperacjeOpenCv.liczbaWatkow);
+        //if (listaZadanOczekujacych.isEmpty() || ((!listaZadanOczekujacych.isEmpty()) && OperacjeOpenCv.liczbaWatkow == 0)) {
+        scanFolders(listaZadanOczekujacych);
+        if (listaZadanOczekujacych.contains(zadaniePrzetwarzane)) listaZadanOczekujacych.remove(zadaniePrzetwarzane);
+        //if (!listaZadanOczekujacych.isEmpty() && OperacjeOpenCv.liczbaWatkow == 0) {
+        if (OperacjeOpenCv.liczbaWatkow == 0) {
+            System.out.println("powolanie nowego watku");
+            //System.out.println("listaZadanOczekujacych.isEmpty(): true -> false");
+            OperacjeOpenCv oocWorker = new OperacjeOpenCv();
+            //oocWorker.init(listaZadanOczekujacych, listaZadanUkonczonych);
+            //oocWorker.run();
+            Thread oocThread = new Thread(oocWorker, "thread_"+System.currentTimeMillis());
+            oocThread.start();
         }
+        //}
         save();
     }
     

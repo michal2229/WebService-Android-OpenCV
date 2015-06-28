@@ -33,7 +33,7 @@ import org.bytedeco.javacv.FrameGrabber;
  * @author Michał
  */
 /*public class OperacjeOpenCv {
-    public static void main(String[] args) throws IOException, FrameGrabber.Exception {
+    public void main(String[] args) throws IOException, FrameGrabber.Exception {
         out.println("Hello from OpenCV.");
         
         // todo: dorzucic do kodu .mkdirs, zeby nie bylo ze nie ma folderow i nie da sie utworzyc
@@ -46,65 +46,115 @@ import org.bytedeco.javacv.FrameGrabber;
 }*/
 
 public class OperacjeOpenCv implements Runnable {
-    static int VID = 0; static int SEQ = 1; static int IMG = 2;
-    static int STD = 0; static int STAB = 1; 
-    static int iloscBledowOdczytu = 0;
-    static int iloscBledowZapisu = 0;
-    static int iloscBledowUsredniania = 0;
-    static int iloscBledowStabilizowania = 0;
-    static opencv_core.Mat bazaDoStabilizacji = null;
-    static opencv_core.Mat bazaDoUsredniania = null;
-    static opencv_features2d.KeyPoint keypoint1 = new opencv_features2d.KeyPoint();
-    static opencv_core.Mat descriptors1 = new opencv_core.Mat();
-    static opencv_features2d.FastFeatureDetector detectorFast = new opencv_features2d.FastFeatureDetector();
-    static opencv_features2d.ORB detektorOrb = new opencv_features2d.ORB(5000, 1.4f, 8, 31, 0, 2, opencv_features2d.ORB.HARRIS_SCORE, 31); // opisac parametry
-    static opencv_features2d.BFMatcher matcherBFM = new opencv_features2d.BFMatcher();
-//	static opencv_features2d.FlannBasedMatcher matcherFBM = new opencv_features2d.FlannBasedMatcher();
-
-    static List<Zadanie> lWej;
-    static List<Zadanie> lWyj;
+    public static int liczbaWatkow = 0;
     
-public static void init(List<Zadanie> lwe, List<Zadanie> lwy) {
-    lWej = lwe; lWyj = lwy;
-    System.out.println("OperacjeOpenCv.init(List<Zadanie> lwe, List<Zadanie> lwy)");
+    int VID = 0; int SEQ = 1; int IMG = 2;
+    int STD = 0; int STAB = 1; 
+    
+    int iloscBledowStabilizowania;
+    int iloscBledowUsredniania;
+    int iloscBledowZapisu;
+    int iloscBledowOdczytu;  
+    
+    opencv_core.Mat bazaDoStabilizacji;
+    opencv_core.Mat bazaDoUsredniania;
+    opencv_features2d.KeyPoint keypoint1;
+    opencv_core.Mat descriptors1;
+    opencv_features2d.FastFeatureDetector detectorFast;
+    opencv_features2d.ORB detektorOrb; // opisac parametry
+    opencv_features2d.BFMatcher matcherBFM;
+//	opencv_features2d.FlannBasedMatcher matcherFBM = new opencv_features2d.FlannBasedMatcher();
+
+public void init() {   
+//	opencv_features2d.FlannBasedMatcher matcherFBM = new opencv_features2d.FlannBasedMatcher();
+    
+    
+    bazaDoStabilizacji = null;
+    bazaDoUsredniania = null;
+    keypoint1 = null;
+    descriptors1 = null;
+    detectorFast = null;
+    detektorOrb = null; // opisac parametry
+    matcherBFM = null;
+    
+    
+    iloscBledowOdczytu = 0;
+    iloscBledowZapisu = 0;
+    iloscBledowUsredniania = 0;
+    iloscBledowStabilizowania = 0;
+    
+    keypoint1 = new opencv_features2d.KeyPoint();
+    descriptors1 = new opencv_core.Mat();
+    detectorFast = new opencv_features2d.FastFeatureDetector();
+    detektorOrb = new opencv_features2d.ORB(5000, 1.4f, 8, 31, 0, 2, opencv_features2d.ORB.HARRIS_SCORE, 31); // opisac parametry
+    matcherBFM = new opencv_features2d.BFMatcher();
 }
+
     
 @Override
 public void run() {
+    liczbaWatkow++;
     System.out.println("OperacjeOpenCv.run()");
-    while (!lWej.isEmpty()) {
-        ZarzadzaniePlikami.changeZadanieStatus(lWej, lWej.get(0), "przetwarzany");
-        ZarzadzaniePlikami.makeFoldersWork(lWej.get(0));
+    //while (!lWej.isEmpty()) {
+    while (true) {
+//        ZarzadzaniePlikami.listaZadanOczekujacych;
+//        ZarzadzaniePlikami.listaZadanUkonczonych;
+        
+        if (!ZarzadzaniePlikami.listaZadanOczekujacych.isEmpty()) {
+            System.out.println("lWej.isEmpty(): " + ZarzadzaniePlikami.listaZadanOczekujacych.isEmpty());     
+            //ZarzadzaniePlikami.changeZadanieStatus(lWej, lWej.get(0), "przetwarzany");
+
+            ZarzadzaniePlikami.zadaniePrzetwarzane = ZarzadzaniePlikami.listaZadanOczekujacych.remove(0);
+            ZarzadzaniePlikami.zadaniePrzetwarzane.setStatus("przetwarzany");
+            ZarzadzaniePlikami.makeFoldersWork(ZarzadzaniePlikami.zadaniePrzetwarzane);
+
+            try {
+                operuj(ZarzadzaniePlikami.zadaniePrzetwarzane.getSciezkaPlikow(), 2, 1);
+                //ZarzadzaniePlikami.changeZadanieStatus(lWej, lWej.get(0), "ukonczono");
+                ZarzadzaniePlikami.zadaniePrzetwarzane.setStatus("ukonczono");
+                ZarzadzaniePlikami.listaZadanUkonczonych.add(ZarzadzaniePlikami.zadaniePrzetwarzane);
+            } catch (IOException ex) {
+                //ZarzadzaniePlikami.changeZadanieStatus(lWej, lWej.get(0), "blad IOException");
+                ZarzadzaniePlikami.zadaniePrzetwarzane.setStatus("blad IOException");
+                ZarzadzaniePlikami.listaZadanUkonczonych.add(ZarzadzaniePlikami.zadaniePrzetwarzane);
+                System.out.println("blad workera: " + ex.getMessage());
+                //Logger.getLogger(OperacjeOpenCv.class.getName()).log(Level.SEVERE, null, ex);  
+            } catch (FrameGrabber.Exception ex) {
+                //ZarzadzaniePlikami.changeZadanieStatus(lWej, lWej.get(0), "blad FrameGrabber.Exception");
+                ZarzadzaniePlikami.zadaniePrzetwarzane.setStatus("blad FrameGrabber.Exception");
+                ZarzadzaniePlikami.listaZadanUkonczonych.add(ZarzadzaniePlikami.zadaniePrzetwarzane);
+                System.out.println("blad workera: " + ex.getMessage());
+                //Logger.getLogger(OperacjeOpenCv.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        } else {
+                  System.out.println("lWej.isEmpty(): " + ZarzadzaniePlikami.listaZadanOczekujacych.isEmpty());      
+        }
+        
         try {
-            operuj(lWej.get(0).getSciezkaPlikow() + "\\obrazki", lWej.get(0).getSciezkaPlikow() + "\\wyniki", 2, 1);
-            ZarzadzaniePlikami.changeZadanieStatus(lWej, lWej.get(0), "ukonczono");
-            lWyj.add(lWej.remove(0));
-        } catch (IOException ex) {
-            ZarzadzaniePlikami.changeZadanieStatus(lWej, lWej.get(0), "blad IOException");
-            lWyj.add(lWej.remove(0));
-            Logger.getLogger(OperacjeOpenCv.class.getName()).log(Level.SEVERE, null, ex);  
-        } catch (FrameGrabber.Exception ex) {
-            ZarzadzaniePlikami.changeZadanieStatus(lWej, lWej.get(0), "blad FrameGrabber.Exception");
-            lWyj.add(lWej.remove(0));
-            Logger.getLogger(OperacjeOpenCv.class.getName()).log(Level.SEVERE, null, ex);
+            //this.wait(5000L);
+            Thread.sleep(5000);
+        } catch (Exception ex) {
+            System.out.println("nie moge czekac... this.wait(5000L): " + ex.getMessage());
         }
     }
+    //liczbaWatkow--;
 }
 
 
 
-public static void operuj(String sciezkaZrodlowa, String sciezkaDocelowa, int typWyjscia, int typStabilizacji) throws IOException, org.bytedeco.javacv.FrameGrabber.Exception {
+public void operuj(String sciezka, int typWyjscia, int typStabilizacji) throws IOException, org.bytedeco.javacv.FrameGrabber.Exception {
+    init();
+
+    Path nazwaFolderu = Paths.get(sciezka);
     List<Path> listaPlikow = new ArrayList<>();
-    Path nazwaFolderuZrodlowego = Paths.get(sciezkaZrodlowa);
-    Path nazwaFolderuDocelowego = Paths.get(sciezkaDocelowa);
     opencv_highgui.CvCapture cvcapt = null;
     opencv_core.Mat baza = null;
     int iloscObrazkow = 0;
-
+    
     // to bedzie zgadywane na podstawie zawartosci folderu
     int typWejscia = SEQ;
 
-    Files.walk(nazwaFolderuZrodlowego).forEach(filePath -> {
+    Files.walk(nazwaFolderu).forEach(filePath -> {
         if (Files.isRegularFile(filePath)) {
             listaPlikow.add(filePath); //out.println(filePath.toAbsolutePath().toString());
         }
@@ -158,15 +208,15 @@ public static void operuj(String sciezkaZrodlowa, String sciezkaDocelowa, int ty
         // to bedzie z ifem
         // zapis obrazka usrednionego
         try {
-            opencv_highgui.imwrite(nazwaFolderuDocelowego.toAbsolutePath().toString() + "\\_wynik-usredniania_" + System.currentTimeMillis() + "." + "png", bazaDoUsredniania);
+            opencv_highgui.imwrite(nazwaFolderu.toAbsolutePath().toString() + "\\wyniki\\_wynik-usredniania_" + System.currentTimeMillis() + "." + "png", bazaDoUsredniania);
         } catch (Exception e) {
-            PrintWriter out = new PrintWriter(nazwaFolderuDocelowego.toAbsolutePath().toString() + "\\log.txt");
+            PrintWriter out = new PrintWriter(nazwaFolderu.toAbsolutePath().toString() + "\\log.txt");
             out.println("nie udalo sie zapisac pliku, prawdopodobnie nie bylo wyniku");
             out.close();
         }
     } 
     else {
-            out.println("Zbyt malo plikow w folderze '" + sciezkaZrodlowa + "'.");
+            out.println("Zbyt malo plikow w folderze '" + sciezka + "'.");
     }
 //        zapiszJakoObrazy("robocze\\filmiki", "robocze\\wydobyte", "png");
 //        dopasujWiele("robocze\\wydobyte", "robocze\\dopasowane", "png");
@@ -180,7 +230,7 @@ public static void operuj(String sciezkaZrodlowa, String sciezkaDocelowa, int ty
 	
 	
 	
-public static opencv_core.Mat usrednij(opencv_core.Mat im1, int i){
+public opencv_core.Mat usrednij(opencv_core.Mat im1, int i){
 		int j = i + 1 - iloscBledowUsredniania;
 		double k = 1.0/j;
 		if (im1.channels() == 4) opencv_imgproc.cvtColor(im1, im1, opencv_imgproc.CV_BGRA2BGR);
@@ -214,7 +264,7 @@ public static opencv_core.Mat usrednij(opencv_core.Mat im1, int i){
 	
 	
 	
-public static opencv_core.Mat ustablilizuj(opencv_core.Mat baza, opencv_core.Mat obrazDoStabilizacji){
+public opencv_core.Mat ustablilizuj(opencv_core.Mat baza, opencv_core.Mat obrazDoStabilizacji){
         try {
         	if (bazaDoStabilizacji == null) {
         		bazaDoStabilizacji = new opencv_core.Mat();
@@ -376,7 +426,7 @@ public static opencv_core.Mat ustablilizuj(opencv_core.Mat baza, opencv_core.Mat
 		        String H_String[] = H.asCvMat().toString().split("\n");
 		        for (int i = 0; i < H_String.length; i++) opencv_core.putText( debugMat1,  H_String[i].replace(",", "      "), new opencv_core.Point(15, 15+15*i), 1, 1, new opencv_core.Scalar(255.0, 255.0, 255.0, 0.0));
 		        opencv_core.cvAddWeighted(debugMat1.asIplImage(), 0.8, result.asIplImage(), 0.4, 0.0, debugMat1.asIplImage());
-		        opencv_highgui.imwrite("robocze\\debug" + "\\_debugMat1_" + System.currentTimeMillis() + "." + "jpg", debugMat1);
+		        //opencv_highgui.imwrite("robocze\\debug" + "\\_debugMat1_" + System.currentTimeMillis() + "." + "jpg", debugMat1);
 		       
 		        return result;
 		    }
@@ -384,7 +434,7 @@ public static opencv_core.Mat ustablilizuj(opencv_core.Mat baza, opencv_core.Mat
 	        	out.println("zbyt malo prawidlowych punktow wspolnych");
 		        opencv_core.cvAddWeighted(debugMat1.asIplImage(), 0.8, result.asIplImage(), 0.4, 0.0, debugMat1.asIplImage());
 	        	opencv_core.putText( debugMat1,  "brak macierzy transformacji", new opencv_core.Point(15, 15), 1, 1, new opencv_core.Scalar(64.0, 64.0, 255.0, 0.0));
-		        opencv_highgui.imwrite("robocze\\debug" + "\\_debugMat1_" + System.currentTimeMillis() + "." + "jpg", debugMat1);
+		        //opencv_highgui.imwrite("robocze\\debug" + "\\_debugMat1_" + System.currentTimeMillis() + "." + "jpg", debugMat1);
 	        	iloscBledowStabilizowania++;
 	        	return null;
 	        }
@@ -400,7 +450,7 @@ public static opencv_core.Mat ustablilizuj(opencv_core.Mat baza, opencv_core.Mat
 
 
 
-public static void usrednijWiele(String sciezkaZrodlowa, String sciezkaDocelowa, String rozszerzenie) throws IOException {
+public void usrednijWiele(String sciezkaZrodlowa, String sciezkaDocelowa, String rozszerzenie) throws IOException {
     List<Path> listaPlikow = new ArrayList<>();
     String nazwaFolderuZrodlowego = Paths.get(sciezkaZrodlowa).toAbsolutePath().toString();
     String nazwaFolderuDocelowego = Paths.get(sciezkaDocelowa).toAbsolutePath().toString();
@@ -476,13 +526,13 @@ public static void usrednijWiele(String sciezkaZrodlowa, String sciezkaDocelowa,
         //Core.multiply(obrazekWynikowy, new Scalar(k), obrazekWynikowy);
         //Highgui.imwrite(nazwaFolderu + "\\_obrazekWynikowy.png", obrazekWynikowy); 
         //cvtColor( obrazekWynikowy_, obrazekWynikowy_, CV_16U );
-        opencv_highgui.cvSaveImage(nazwaFolderuDocelowego + "\\_obrazekWynikowy_" + iloscObrazkow + "o-" + iloscBledow + "e."+rozszerzenie, obrazekWynikowy);
+        opencv_highgui.cvSaveImage(nazwaFolderuDocelowego + "\\wyniki\\_obrazekWynikowy_" + iloscObrazkow + "o-" + iloscBledow + "e."+rozszerzenie, obrazekWynikowy);
     }
 
 
 }
 
-public static void dopasujWiele(String sciezkaZrodlowa, String sciezkaDocelowa, String rozszerzenie) throws IOException {
+public void dopasujWiele(String sciezkaZrodlowa, String sciezkaDocelowa, String rozszerzenie) throws IOException {
     List<Path> listaObrazkow = new ArrayList<>();
     String nazwaFolderuZrodlowego = Paths.get(sciezkaZrodlowa).toAbsolutePath().toString();
     String nazwaFolderuDocelowego = Paths.get(sciezkaDocelowa).toAbsolutePath().toString();
@@ -874,7 +924,7 @@ public static void dopasujWiele(String sciezkaZrodlowa, String sciezkaDocelowa, 
 
                                     result = out_;
 
-                            opencv_highgui.imwrite(nazwaFolderuDocelowego + "\\_wynik_" + sciezkaObrazka.getFileName() + "_" + iloscObrazkow + "o-" + iloscBledow + "e."+rozszerzenie, result);
+                            opencv_highgui.imwrite(nazwaFolderuDocelowego + "\\wyniki\\_wynik_" + sciezkaObrazka.getFileName() + "_" + iloscObrazkow + "o-" + iloscBledow + "e."+rozszerzenie, result);
     //		        opencv_highgui.imwrite(nazwaFolderuDocelowego + "\\_wynik_affine_" + sciezkaObrazka.getFileName() + ".jpg", result_affine);
 
                             //Mat half = new Mat(result,new Rect(0,0,image2_.cols(),image2_.rows()));
@@ -884,14 +934,14 @@ public static void dopasujWiele(String sciezkaZrodlowa, String sciezkaDocelowa, 
                             String H_String[] = H.asCvMat().toString().split("\n");
 
                             for (int i = 0; i < H_String.length; i++) opencv_core.putText( debugMat1,  H_String[i].replace(",", "      "), new opencv_core.Point(15, 15+15*i), 1, 1, new opencv_core.Scalar(255.0, 255.0, 255.0, 0.0));
-                            opencv_highgui.imwrite("robocze\\debug" + "\\_debugMat1_" + sciezkaObrazka.getFileName() + "." + "jpg", debugMat1);
+                            opencv_highgui.imwrite(nazwaFolderuDocelowego + "\\debug" + "\\_debugMat1_" + sciezkaObrazka.getFileName() + "." + "jpg", debugMat1);
                             //opencv_highgui.imwrite("robocze\\debug" + "\\_debugMat2_" + sciezkaObrazka.getFileName() + ".jpg", debugMat2);
 
                         }
                         else {
                             out.println("zbyt malo prawidlowych punktow wspolnych");
                             opencv_core.putText( debugMat1,  "brak macierzy transformacji", new opencv_core.Point(15, 15), 1, 1, new opencv_core.Scalar(64.0, 64.0, 255.0, 0.0));
-                            opencv_highgui.imwrite("robocze\\debug" + "\\_debugMat1_" + sciezkaObrazka.getFileName() + "." + "jpg", debugMat1);
+                            opencv_highgui.imwrite(nazwaFolderuDocelowego + "\\debug" + "\\_debugMat1_" + sciezkaObrazka.getFileName() + "." + "jpg", debugMat1);
                             iloscBledow++;
                     }
 
@@ -907,7 +957,7 @@ public static void dopasujWiele(String sciezkaZrodlowa, String sciezkaDocelowa, 
     }
 }
 
-public static void zapiszJakoObrazy(String sciezkaZrodlowa, String sciezkaDocelowa, String rozszerzenie) throws IOException, FrameGrabber.Exception {
+public void zapiszJakoObrazy(String sciezkaZrodlowa, String sciezkaDocelowa, String rozszerzenie) throws IOException, FrameGrabber.Exception {
     List<Path> listaFilmikow = new ArrayList<>();
     String nazwaFolderuZrodlowego = Paths.get(sciezkaZrodlowa).toAbsolutePath().toString();
     String nazwaFolderuDocelowego = Paths.get(sciezkaDocelowa).toAbsolutePath().toString();
@@ -938,7 +988,7 @@ public static void zapiszJakoObrazy(String sciezkaZrodlowa, String sciezkaDocelo
             for (int i = 0; i<iloscKlatek-1; i++) {
                 out.println("klatka: " + i + "/" + iloscKlatek);
                 //obrazek = opencv_highgui.cvQueryFrame(cvcapt);
-                opencv_highgui.cvSaveImage(nazwaFolderuDocelowego + "\\_" + sciezkaFilmiku.getFileName() + "_klatka_" + formatStr.format(i) + "."+rozszerzenie, opencv_highgui.cvQueryFrame(cvcapt));
+                opencv_highgui.cvSaveImage(nazwaFolderuDocelowego + "\\wyniki\\_" + sciezkaFilmiku.getFileName() + "_klatka_" + formatStr.format(i) + "."+rozszerzenie, opencv_highgui.cvQueryFrame(cvcapt));
 
             }
             //cvReleaseImage(obrazek);

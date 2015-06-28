@@ -269,7 +269,7 @@ public class GetDataService {
             
             try {
                 ZarzadzaniePlikami.dodajZadanie(clientLogin, clientProjectName);
-                //ZarzadzaniePlikami.wyswietlZadaniaNaLiscie(ZarzadzaniePlikami.listaZadanOczekujacych, clientLogin);
+                ZarzadzaniePlikami.wyswietlZadaniaNaLiscie(ZarzadzaniePlikami.listaZadanOczekujacych, clientLogin);
             } catch (IOException ex) {
                 System.out.println("cos jest nie tak... " + ex.getMessage());
                 return ex.getMessage();
